@@ -13,6 +13,13 @@ public class DrivingState : State
     private float steerInput;
     private bool  handbrake;
 
+    [Header("Camera")]
+    private float camSensitivity = 2f;
+    private float camPitchMin    = -20f;
+    private float camPitchMax    =  60f;
+    private float camYaw;
+    private float camPitch;
+
     public DrivingState(Character _character, StateMachine _stateMachine)
         : base(_character, _stateMachine) { }
 
@@ -27,8 +34,12 @@ public class DrivingState : State
         character.playerVCam.Priority  = 0;
         character.vehicleVCam.Priority = 10;
 
-        character.vehicleVCam.Follow = vehicle.transform;
-        character.vehicleVCam.LookAt = vehicle.transform;
+        character.vehicleVCam.Follow = vehicle.cameraTarget;
+        character.vehicleVCam.LookAt = vehicle.cameraTarget;
+
+        camYaw = vehicle.transform.eulerAngles.y;
+        camPitch = 10f;
+        vehicle.cameraTarget.rotation = Quaternion.Euler(camPitch, camYaw, 0f);
 
         // // Grab vehicle action map
         var actions = character.playerInput.actions;
@@ -36,6 +47,8 @@ public class DrivingState : State
         steerAction       = actions["Steer"];
         handbrakeAction   = actions["Handbrake"];
         exitVehicleAction = actions["ExitVehicle"];
+        lookAction = character.playerInput.actions.FindActionMap("Walking").FindAction("Look");
+        lookAction.Enable();
 
         accelerateAction.Enable();
         steerAction.Enable();
@@ -58,6 +71,30 @@ public class DrivingState : State
         accelInput = accelerateAction.ReadValue<float>();
         steerInput  = steerAction.ReadValue<float>();
         handbrake   = handbrakeAction.IsPressed();
+
+        if (lookAction != null)
+        {
+            Vector2 look = lookAction.ReadValue<Vector2>();
+            Debug.Log("LOok: " + look);
+
+            bool mouseMoving = look.sqrMagnitude > 0.01f;
+
+            if (mouseMoving)
+            {
+                camYaw   += look.x * camSensitivity;
+                camPitch -= look.y * camSensitivity;
+                camPitch  = Mathf.Clamp(camPitch, camPitchMin, camPitchMax);
+            }
+            else if (accelInput > 0.1f)
+            {
+                // Smoothly snap back behind the vehicle when driving forward
+                camYaw = Mathf.LerpAngle(camYaw, vehicle.transform.eulerAngles.y, 2f * Time.deltaTime);
+            }
+
+            // Rotate the pivot so Cinemachine follows it
+            if (vehicle != null && vehicle.cameraTarget != null)
+                vehicle.cameraTarget.rotation = Quaternion.Euler(camPitch, camYaw, 0f);
+        }
 
         // Simple camera-relative look at vehicle forward (optional)
         character.yaw = vehicle.transform.eulerAngles.y;
