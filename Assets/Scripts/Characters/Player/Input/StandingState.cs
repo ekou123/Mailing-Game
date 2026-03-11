@@ -81,36 +81,31 @@ public class StandingState : State
     {
         base.HandleInput();
 
-        // Movement
         input = moveAction != null ? moveAction.ReadValue<Vector2>() : Vector2.zero;
         velocity = new Vector3(input.x, 0, input.y);
 
         jump = jumpAction != null && jumpAction.WasPressedThisFrame();
 
-        // Look
         if (lookAction != null)
         {
             Vector2 look = lookAction.ReadValue<Vector2>();
-            // For mouse delta, treat as per-frame and just scale by sensitivity.
-            // (If you add stick, you might want dt scaling—keep it simple for now.)
+
             character.yaw   += look.x * character.lookSensitivity;
             character.pitch -= look.y * character.lookSensitivity;
-
             character.pitch = Mathf.Clamp(character.pitch, character.pitchMin, character.pitchMax);
 
-            // Apply yaw to body
+            // Yaw rotates the body as before
             character.transform.rotation = Quaternion.Euler(0f, character.yaw, 0f);
 
-            // Apply pitch to camera pivot only
-            if (character.cameraPivot != null)
-                character.cameraPivot.localRotation = Quaternion.Euler(character.pitch, 0f, 0f);
+            // Pitch rotates the FirstPersonAnchor — Cinemachine reads this
+            if (character.firstPersonAnchor != null)
+                character.firstPersonAnchor.localRotation = Quaternion.Euler(character.pitch, 0f, 0f);
         }
 
-        // Convert movement to camera-relative horizontal (yaw only)
-        Vector3 camForward = character.cameraTransform.forward;
-        Vector3 camRight = character.cameraTransform.right;
+        Vector3 camForward = character.firstPersonAnchor.forward;
+        Vector3 camRight   = character.firstPersonAnchor.right;
         camForward.y = 0f;
-        camRight.y = 0f;
+        camRight.y   = 0f;
 
         velocity = velocity.x * camRight.normalized + velocity.z * camForward.normalized;
         velocity.y = 0f;

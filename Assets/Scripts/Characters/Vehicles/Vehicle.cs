@@ -3,6 +3,9 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class Vehicle : MonoBehaviour
 {
+    [Header("Vehicle Object")]
+    public Transform cameraTarget;
+
     [Header("Stats")]
     public float motorForce = 1500f;
     public float brakeForce = 3000f;
@@ -27,6 +30,7 @@ public class Vehicle : MonoBehaviour
     [HideInInspector] public Rigidbody rb;
     [HideInInspector] public bool isOccupied;
     [HideInInspector] public Character currentDriver;
+    
 
     private void Awake()
     {

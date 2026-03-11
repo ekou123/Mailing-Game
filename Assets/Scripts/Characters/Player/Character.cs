@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using ExitGames.Client.Photon.StructWrapping;
 using Photon.Pun;
 using Unity.VisualScripting;
+using Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -12,9 +13,12 @@ public class Character : MonoBehaviourPunCallbacks
     public static Character Instance {get; private set;}
     
     [Header("PlayerObject")]
-    public Transform orientation;
+    public Transform firstPersonAnchor;
     public Transform cameraPivot;
     public Canvas inventoryCanvas;
+    public CinemachineVirtualCamera playerVCam;
+    public CinemachineVirtualCamera vehicleVCam;
+
     public event Action<Character> OnCharacterInitialized;
 
     [Header("PlayerStats")]
@@ -102,15 +106,14 @@ public class Character : MonoBehaviourPunCallbacks
         }
 
         
-        cameraTransform = GetComponentInChildren<Camera>().transform;
+        // cameraTransform = GetComponentInChildren<Camera>().transform;
         controller = GetComponent<CharacterController>();
         animator = GetComponent<Animator>();
         playerInput = GetComponent<PlayerInput>();
         rb = GetComponent<Rigidbody>();
         // cameraTransform = Camera.main.transform;
 
-        cameraPivot = GetComponentInChildren<Camera>().transform;
-        orientation = this.transform;
+        //cameraPivot = GetComponentInChildren<Camera>().transform;
 
         groundSensor = GetComponent<GroundSensor>();
         

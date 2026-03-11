@@ -22,6 +22,14 @@ public class DrivingState : State
     {
         base.Enter();
 
+        character.playerInput.SwitchCurrentActionMap("Vehicle");
+
+        character.playerVCam.Priority  = 0;
+        character.vehicleVCam.Priority = 10;
+
+        character.vehicleVCam.Follow = vehicle.transform;
+        character.vehicleVCam.LookAt = vehicle.transform;
+
         // // Grab vehicle action map
         var actions = character.playerInput.actions;
         accelerateAction  = actions["Accelerate"];
@@ -89,9 +97,14 @@ public class DrivingState : State
     public override void Exit()
     {
         base.Exit();
+        character.playerInput.SwitchCurrentActionMap("Walking");
+
         accelerateAction?.Disable();
         steerAction?.Disable();
         handbrakeAction?.Disable();
         exitVehicleAction?.Disable();
+
+        character.vehicleVCam.Priority = 0;
+        character.playerVCam.Priority  = 10;
     }
 }
