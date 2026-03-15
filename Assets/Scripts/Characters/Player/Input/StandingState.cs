@@ -136,49 +136,67 @@ public class StandingState : State
         }
     }
 
+    // public override void PhysicsUpdate()
+    // {
+    //     base.PhysicsUpdate();
+
+    //     grounded = character.groundSensor != null && character.groundSensor.IsGrounded;
+
+    //     gravityVelocity.y += gravityValue * Time.deltaTime;
+
+        
+    //     if (grounded)
+    //     {
+    //         gravityVelocity.y = 0f;
+    //     }
+
+    //     Vector3 rbVelocity = character.rb.velocity;
+    //     float yVelocity = rbVelocity.y;
+
+    //     Vector3 horizontalVelocity = velocity * playerSpeed;
+        
+
+    //     Vector3 finalVelocity = new Vector3(horizontalVelocity.x, yVelocity, horizontalVelocity.z);
+
+    //     character.rb.velocity = finalVelocity;
+
+
+    //     // Vector3 flattened = new Vector3(finalVelocity.x, 0f, finalVelocity.z);
+    //     // if (flattened.sqrMagnitude >= 0.01f)
+    //     // {
+    //     //     character.transform.forward = flattened.normalized;
+    //     // }
+
+    //     //currentVelocity = Vector3.SmoothDamp(currentVelocity, velocity, ref cVelocity, character.velocityDampTime);
+
+    //     //character.controller.Move((currentVelocity * playerSpeed + gravityVelocity) * Time.deltaTime);
+
+    //     //grounded = character.controller.isGrounded;
+
+
+    //     // if (character.photonView.IsMine)
+    //     // {
+    //     //     if (currentVelocity.sqrMagnitude > 0)
+    //     //     {
+    //     //         character.transform.forward = currentVelocity.normalized;
+    //     //     }
+    //     // }
+    // }
+
     public override void PhysicsUpdate()
     {
         base.PhysicsUpdate();
 
-        gravityVelocity.y += gravityValue * Time.deltaTime;
-
-        
-        if (grounded)
-        {
-            gravityVelocity.y = 0f;
-        }
+        grounded = character.groundSensor != null && character.groundSensor.IsGrounded;
 
         Vector3 rbVelocity = character.rb.velocity;
         float yVelocity = rbVelocity.y;
 
+        if (grounded && yVelocity < 0.1f)
+            yVelocity = 0f;
+
         Vector3 horizontalVelocity = velocity * playerSpeed;
-        
-
-        Vector3 finalVelocity = new Vector3(horizontalVelocity.x, yVelocity, horizontalVelocity.z);
-
-        character.rb.velocity = finalVelocity;
-
-
-        // Vector3 flattened = new Vector3(finalVelocity.x, 0f, finalVelocity.z);
-        // if (flattened.sqrMagnitude >= 0.01f)
-        // {
-        //     character.transform.forward = flattened.normalized;
-        // }
-
-        //currentVelocity = Vector3.SmoothDamp(currentVelocity, velocity, ref cVelocity, character.velocityDampTime);
-
-        //character.controller.Move((currentVelocity * playerSpeed + gravityVelocity) * Time.deltaTime);
-
-        //grounded = character.controller.isGrounded;
-
-
-        // if (character.photonView.IsMine)
-        // {
-        //     if (currentVelocity.sqrMagnitude > 0)
-        //     {
-        //         character.transform.forward = currentVelocity.normalized;
-        //     }
-        // }
+        character.rb.velocity = new Vector3(horizontalVelocity.x, yVelocity, horizontalVelocity.z);
     }
 
     public override void Exit()

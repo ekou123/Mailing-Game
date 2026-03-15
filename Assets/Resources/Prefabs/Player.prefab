@@ -193,7 +193,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2760878281095415534}
   serializedVersion: 4
-  m_Mass: 1
+  m_Mass: 150
   m_Drag: 0
   m_AngularDrag: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -243,7 +243,7 @@ MonoBehaviour:
   crouchSpeed: 2
   sprintSpeed: 7
   jumpHeight: 0.8
-  gravityMultiplier: 2
+  gravityMultiplier: 1
   rotationSpeed: 5
   crouchColliderHeight: 1.35
   lookSensitivity: 0.1
@@ -257,7 +257,6 @@ MonoBehaviour:
   airControl: 0.5
   gravityValue: -9.81
   normalColliderHeight: 0
-  controller: {fileID: 0}
   playerInput: {fileID: 0}
   cameraTransform: {fileID: 0}
   animator: {fileID: 0}

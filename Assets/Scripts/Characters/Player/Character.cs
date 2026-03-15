@@ -40,7 +40,7 @@ public class Character : MonoBehaviourPunCallbacks
     public float crouchSpeed = 2.0f;
     public float sprintSpeed = 7.0f;
     public float jumpHeight = 0.8f;
-    public float gravityMultiplier = 2;
+    public float gravityMultiplier = 1;
     public float rotationSpeed = 5f;
     public float crouchColliderHeight = 1.35f;
     public float lookSensitivity = 0.1f;
@@ -75,8 +75,6 @@ public class Character : MonoBehaviourPunCallbacks
     [HideInInspector]
     public float normalColliderHeight;
     [HideInInspector]
-    public CharacterController controller;
-    [HideInInspector]
     public PlayerInput playerInput;
     [HideInInspector]
     public Transform cameraTransform;
@@ -107,7 +105,6 @@ public class Character : MonoBehaviourPunCallbacks
 
         
         // cameraTransform = GetComponentInChildren<Camera>().transform;
-        controller = GetComponent<CharacterController>();
         animator = GetComponent<Animator>();
         playerInput = GetComponent<PlayerInput>();
         rb = GetComponent<Rigidbody>();
@@ -142,7 +139,7 @@ public class Character : MonoBehaviourPunCallbacks
 
     void Start()
     {
-        
+        Debug.Log($"RB useGravity={rb.useGravity} gravityValue={gravityValue}");
         
         
     }

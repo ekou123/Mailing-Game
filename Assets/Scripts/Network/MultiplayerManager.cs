@@ -74,7 +74,7 @@ public class MultiplayerManager : MonoBehaviourPunCallbacks
             Debug.Log($"Instantiating PlayerObject for Player {PhotonNetwork.LocalPlayer.ActorNumber}");
             //GameObject playerManager = PhotonNetwork.Instantiate(Path.Combine("PhotonPrefabs", "PlayerManager"), Vector3.zero,Quaternion.identity);
             //GameObject playerController = PhotonNetwork.Instantiate(Path.Combine("PhotonPrefabs", "PlayerController"), Vector3.zero, Quaternion.identity);
-            GameObject playerObject = PhotonNetwork.Instantiate(Path.Combine("Prefabs", "Player"), new Vector3(-10f,5,-40),Quaternion.identity);
+            GameObject playerObject = PhotonNetwork.Instantiate(Path.Combine("Prefabs", "Player"), new Vector3(17.18f,5,-42.122f),Quaternion.identity);
         }
     }
 }

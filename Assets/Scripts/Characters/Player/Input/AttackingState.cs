@@ -42,7 +42,6 @@ public class AttackingState : State
         canUseNextAttack = false;
 
         playerSpeed = character.playerBaseSpeed;
-        grounded = character.controller.isGrounded;
         gravityValue = character.gravityValue;
 
         
@@ -129,7 +128,7 @@ public class AttackingState : State
 
         //currentVelocity = Vector3.SmoothDamp(currentVelocity, velocity, ref cVelocity, character.velocityDampTime);
 
-        character.controller.Move((currentVelocity * playerSpeed + gravityVelocity) * Time.deltaTime);
+        // character.controller.Move((currentVelocity * playerSpeed + gravityVelocity) * Time.deltaTime);
     }
 
     public override void Exit()

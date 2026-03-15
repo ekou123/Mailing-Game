@@ -29,25 +29,15 @@ public class DrivingState : State
     {
         base.Enter();
 
+        // ── 1. Set up input FIRST so HandleInput() is never null ──
         character.playerInput.SwitchCurrentActionMap("Vehicle");
 
-        character.playerVCam.Priority  = 0;
-        character.vehicleVCam.Priority = 10;
-
-        character.vehicleVCam.Follow = vehicle.cameraTarget;
-        character.vehicleVCam.LookAt = vehicle.cameraTarget;
-
-        camYaw = vehicle.transform.eulerAngles.y;
-        camPitch = 10f;
-        vehicle.cameraTarget.rotation = Quaternion.Euler(camPitch, camYaw, 0f);
-
-        // // Grab vehicle action map
         var actions = character.playerInput.actions;
         accelerateAction  = actions["Accelerate"];
         steerAction       = actions["Steer"];
         handbrakeAction   = actions["Handbrake"];
         exitVehicleAction = actions["ExitVehicle"];
-        lookAction = character.playerInput.actions.FindActionMap("Walking").FindAction("Look");
+        lookAction        = character.playerInput.actions.FindActionMap("Walking").FindAction("Look");
         lookAction.Enable();
 
         accelerateAction.Enable();
@@ -55,12 +45,42 @@ public class DrivingState : State
         handbrakeAction.Enable();
         exitVehicleAction.Enable();
 
-        // Disable character physics while driving
-        character.rb.isKinematic = true;
+        // ── 2. Ignore collisions (skip CharacterController & WheelColliders) ──
+        Collider[] charCols    = character.GetComponentsInChildren<Collider>();
+        Collider[] vehicleCols = vehicle.GetComponentsInChildren<Collider>();
 
-        // Sit the player in the seat
-        character.transform.SetParent(vehicle.driverSeat);
-        character.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+        foreach (var cc in charCols)
+        {
+            if (cc is CharacterController) continue;
+            foreach (var vc in vehicleCols)
+            {
+                if (vc is WheelCollider) continue;
+                Physics.IgnoreCollision(cc, vc, true);
+            }
+        }
+
+        // ── 3. Disable character colliders & controller ──
+        foreach (var col in charCols)
+            col.enabled = false;
+
+        // ── 4. Everything else unchanged ──
+        character.GetComponentInChildren<Renderer>().enabled = false;
+
+        character.rb.velocity        = Vector3.zero;
+        character.rb.angularVelocity = Vector3.zero;
+        character.rb.isKinematic     = true;
+
+        character.transform.position = vehicle.driverSeat.position;
+
+        character.playerVCam.Priority  = 0;
+        character.vehicleVCam.Priority = 10;
+
+        character.vehicleVCam.Follow = vehicle.cameraTarget;
+        character.vehicleVCam.LookAt = vehicle.cameraTarget;
+
+        camYaw   = vehicle.transform.eulerAngles.y;
+        camPitch = 10f;
+        vehicle.cameraTarget.rotation = Quaternion.Euler(camPitch, camYaw, 0f);
 
         vehicle.OnDriverEnter(character);
     }
@@ -75,7 +95,7 @@ public class DrivingState : State
         if (lookAction != null)
         {
             Vector2 look = lookAction.ReadValue<Vector2>();
-            Debug.Log("LOok: " + look);
+            
 
             bool mouseMoving = look.sqrMagnitude > 0.01f;
 
@@ -114,19 +134,35 @@ public class DrivingState : State
         base.PhysicsUpdate();
 
         if (vehicle != null)
+        {
+            // Manually follow the seat every frame instead of parenting
+            character.transform.position = vehicle.driverSeat.position;
+            Debug.Log("Accel: " + accelInput + " | Steer: " + steerInput + " | Handbrake: " + handbrake);
+            
             vehicle.ApplyInput(accelInput, steerInput, handbrake);
+            //vehicle.ApplyInput(0, 0, false);
+        }
     }
 
     private void ExitVehicle()
     {
         vehicle.OnDriverExit();
 
-        // Unparent and move player to exit point
-        character.transform.SetParent(null);
-        character.transform.position = vehicle.exitPoint.position;
+        foreach (var col in character.GetComponentsInChildren<Collider>())
+            col.enabled = true;
 
-        // Re-enable character physics
-        character.rb.isKinematic = false;
+        // Restore normal collision
+        Collider[] charCols    = character.GetComponentsInChildren<Collider>();
+        Collider[] vehicleCols = vehicle.GetComponentsInChildren<Collider>();
+
+        foreach (var cc in charCols)
+            foreach (var vc in vehicleCols)
+                Physics.IgnoreCollision(cc, vc, false);
+
+        character.transform.position = vehicle.exitPoint.position;
+        character.rb.isKinematic     = false;
+
+        character.GetComponentInChildren<Renderer>().enabled = true;
 
         stateMachine.ChangeState(character.standing);
     }
@@ -143,5 +179,7 @@ public class DrivingState : State
 
         character.vehicleVCam.Priority = 0;
         character.playerVCam.Priority  = 10;
+
+        character.GetComponent<CapsuleCollider>().enabled = true;   
     }
 }

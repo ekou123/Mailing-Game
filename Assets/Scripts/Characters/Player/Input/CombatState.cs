@@ -29,7 +29,7 @@ public class CombatState : State
 
         playerSpeed = -character.playerBaseSpeed;
         velocity = character.playerVelocity;
-        grounded = character.controller.isGrounded;
+        // grounded = character.controller.isGrounded;
         gravityValue = character.gravityValue;
     }
 
@@ -75,7 +75,7 @@ public class CombatState : State
         base.PhysicsUpdate();
 
         gravityVelocity.y += gravityValue * Time.deltaTime;
-        grounded = character.controller.isGrounded;
+        // grounded = character.controller.isGrounded;
 
         if (grounded && gravityVelocity.y < 0)
         {
