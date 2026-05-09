@@ -1,24 +1,34 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class DrivingState : State
 {
-    private Vehicle vehicle;
-    private InputAction accelerateAction;
-    private InputAction steerAction;
-    private InputAction handbrakeAction;
-    private InputAction exitVehicleAction;
+    [Header("Camera")]
+    private float camSensitivity  = 2f;
+    private float camPitchMin     = -20f;
+    private float camPitchMax     = 60f;
+    private float camFollowSpeed = 8f;
+    private float camYaw;
+    private float camPitch;
+    private float camReturnSpeed  = 3f;
+    private float camSmoothSpeed  = 10f;
+    private float idleReturnDelay = 1f;
+    private Vector3 smoothCamPos;
+    private float timeSinceMouseMoved;
+    private float smoothYaw;
+    private float smoothPitch;
 
     private float accelInput;
     private float steerInput;
     private bool  handbrake;
 
-    [Header("Camera")]
-    private float camSensitivity = 2f;
-    private float camPitchMin    = -20f;
-    private float camPitchMax    =  60f;
-    private float camYaw;
-    private float camPitch;
+    
+    private Vehicle vehicle;
+    private InputAction accelerateAction;
+    private InputAction steerAction;
+    private InputAction handbrakeAction;
+    private InputAction exitVehicleAction;
 
     public DrivingState(Character _character, StateMachine _stateMachine)
         : base(_character, _stateMachine) { }
@@ -29,7 +39,6 @@ public class DrivingState : State
     {
         base.Enter();
 
-        // ── 1. Set up input FIRST so HandleInput() is never null ──
         character.playerInput.SwitchCurrentActionMap("Vehicle");
 
         var actions = character.playerInput.actions;
@@ -45,7 +54,6 @@ public class DrivingState : State
         handbrakeAction.Enable();
         exitVehicleAction.Enable();
 
-        // ── 2. Ignore collisions (skip CharacterController & WheelColliders) ──
         Collider[] charCols    = character.GetComponentsInChildren<Collider>();
         Collider[] vehicleCols = vehicle.GetComponentsInChildren<Collider>();
 
@@ -59,11 +67,9 @@ public class DrivingState : State
             }
         }
 
-        // ── 3. Disable character colliders & controller ──
         foreach (var col in charCols)
             col.enabled = false;
 
-        // ── 4. Everything else unchanged ──
         character.GetComponentInChildren<Renderer>().enabled = false;
 
         character.rb.velocity        = Vector3.zero;
@@ -78,25 +84,37 @@ public class DrivingState : State
         character.vehicleVCam.Follow = vehicle.cameraTarget;
         character.vehicleVCam.LookAt = vehicle.cameraTarget;
 
-        camYaw   = vehicle.transform.eulerAngles.y;
-        camPitch = 10f;
+        camYaw              = vehicle.transform.eulerAngles.y;
+        camPitch            = 10f;
+        smoothYaw           = camYaw;
+        smoothPitch         = camPitch;
+        timeSinceMouseMoved = 999f;
+
         vehicle.cameraTarget.rotation = Quaternion.Euler(camPitch, camYaw, 0f);
 
+        var orbital = character.vehicleVCam.GetCinemachineComponent<Cinemachine.CinemachineOrbitalTransposer>();
+        if (orbital != null)
+        {
+            orbital.m_XAxis.Value = 0f;
+            orbital.m_RecenterToTargetHeading.m_enabled = false;
+        }
+
+        character.vehicleVCam.PreviousStateIsValid = false;
+
         vehicle.OnDriverEnter(character);
+
+        smoothCamPos = vehicle.transform.position;
     }
 
     public override void HandleInput()
     {
-        // Don't call base — we don't want character look while driving
         accelInput = accelerateAction.ReadValue<float>();
-        steerInput  = steerAction.ReadValue<float>();
-        handbrake   = handbrakeAction.IsPressed();
+        steerInput = steerAction.ReadValue<float>();
+        handbrake  = handbrakeAction.IsPressed();
 
         if (lookAction != null)
         {
             Vector2 look = lookAction.ReadValue<Vector2>();
-            
-
             bool mouseMoving = look.sqrMagnitude > 0.01f;
 
             if (mouseMoving)
@@ -104,19 +122,31 @@ public class DrivingState : State
                 camYaw   += look.x * camSensitivity;
                 camPitch -= look.y * camSensitivity;
                 camPitch  = Mathf.Clamp(camPitch, camPitchMin, camPitchMax);
+                timeSinceMouseMoved = 0f;
             }
-            else if (accelInput > 0.1f)
+            else
             {
-                // Smoothly snap back behind the vehicle when driving forward
-                camYaw = Mathf.LerpAngle(camYaw, vehicle.transform.eulerAngles.y, 2f * Time.deltaTime);
+                timeSinceMouseMoved += Time.deltaTime;
+
+                if (timeSinceMouseMoved > idleReturnDelay && Mathf.Abs(accelInput) > 0.1f)
+                {
+                    float vehicleYaw = vehicle.transform.eulerAngles.y;
+
+                    if (accelInput < 0f)
+                        vehicleYaw += 180f;
+
+                    camYaw   = Mathf.LerpAngle(camYaw, vehicleYaw, camReturnSpeed * Time.deltaTime);
+                    camPitch = Mathf.Lerp(camPitch, 10f, camReturnSpeed * Time.deltaTime);
+                }
             }
 
-            // Rotate the pivot so Cinemachine follows it
+            smoothYaw   = Mathf.LerpAngle(smoothYaw, camYaw, camSmoothSpeed * Time.deltaTime);
+            smoothPitch = Mathf.Lerp(smoothPitch, camPitch, camSmoothSpeed * Time.deltaTime);
+
             if (vehicle != null && vehicle.cameraTarget != null)
-                vehicle.cameraTarget.rotation = Quaternion.Euler(camPitch, camYaw, 0f);
+                vehicle.cameraTarget.rotation = Quaternion.Euler(smoothPitch, smoothYaw, 0f);
         }
 
-        // Simple camera-relative look at vehicle forward (optional)
         character.yaw = vehicle.transform.eulerAngles.y;
         character.transform.rotation = Quaternion.Euler(0f, character.yaw, 0f);
     }
@@ -137,10 +167,10 @@ public class DrivingState : State
         {
             // Manually follow the seat every frame instead of parenting
             character.transform.position = vehicle.driverSeat.position;
-            Debug.Log("Accel: " + accelInput + " | Steer: " + steerInput + " | Handbrake: " + handbrake);
-            
             vehicle.ApplyInput(accelInput, steerInput, handbrake);
-            //vehicle.ApplyInput(0, 0, false);
+
+            smoothCamPos = Vector3.Lerp(smoothCamPos, vehicle.transform.position, camFollowSpeed * Time.fixedDeltaTime);
+            vehicle.cameraTarget.position = smoothCamPos;
         }
     }
 

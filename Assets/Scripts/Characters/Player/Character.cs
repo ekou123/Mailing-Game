@@ -156,5 +156,10 @@ public class Character : MonoBehaviourPunCallbacks
         movementSM.currentState.PhysicsUpdate();
     }
 
+    private void LateUpdate() 
+    {
+        // movementSM.currentState.PhysicsUpdate();
+    }
+
      
 }

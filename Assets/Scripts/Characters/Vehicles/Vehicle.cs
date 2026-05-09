@@ -12,10 +12,16 @@ public class Vehicle : MonoBehaviour
     public float brakeForce = 3000f;
     public float handbrakeForce = 5000f;
 
+    [Header("Drifting")]
+    public float driftSidewaysFriction = 0.2f;  // lower = more slide (0.1 wild, 0.4 mild)
+    public float driftYawAssist = 800f;          // torque that rotates the car into the corner
+    public float driftDragForce = 25f;           // speed scrubbed per m/s of lateral slip
+
     [Header("Steering")]
     public float maxSteerAngle = 35f;
     public float steerSpeed = 5f;          // how fast steering responds
     public AnimationCurve steerCurve;      // reduces steer angle at high speed
+    public float turnAssist = 10f;
 
     [Header("Landing")]
     public float landingBounceForce = 0.5f;
@@ -57,6 +63,7 @@ public class Vehicle : MonoBehaviour
     private float timeSinceEntered;
     private bool settling;
     private RigidbodyConstraints baseConstraints;
+    private WheelFrictionCurve originalRearSidewaysFriction;
 
     private void Awake()
     {
@@ -69,10 +76,15 @@ public class Vehicle : MonoBehaviour
         {
             steerCurve = new AnimationCurve(
                 new Keyframe(0f,    1f),   // full steering at 0 speed
-                new Keyframe(15f,  0.5f), // half steering at 15 m/s
-                new Keyframe(30f,  0.2f)  // minimal steering at 30 m/s
+                new Keyframe(20f,  0.7f), // half steering at 15 m/s
+                new Keyframe(30f,  0.3f)  // minimal steering at 30 m/s
             );
         }
+    }
+
+    private void Start()
+    {
+        originalRearSidewaysFriction = rearLeft.sidewaysFriction;
     }
 
     /// <summary>
@@ -211,7 +223,8 @@ public class Vehicle : MonoBehaviour
 
     public void ApplyInput(float accel, float steer, bool handbrake)
     {
-        currentSpeed = rb.velocity.magnitude;
+        currentSpeed = Vector3.Dot(rb.velocity, transform.forward);
+        currentSpeed = Mathf.Abs(currentSpeed);
 
         // Release Y freeze once physics has settled
         if (settling && timeSinceEntered >= 0.3f)
@@ -222,7 +235,7 @@ public class Vehicle : MonoBehaviour
 
         HandleMotor(accel);
         HandleSteering(steer);
-        HandleBraking(accel, handbrake);
+        HandleBraking(accel, steer, handbrake);
         ApplyDownforce();
         UpdateWheelMeshes();
     }
@@ -234,19 +247,28 @@ public class Vehicle : MonoBehaviour
         // Cap speed
         if (accel > 0 && currentSpeed >= maxSpeed)
         {
+            frontLeft.motorTorque = 0f;
+            frontRight.motorTorque = 0f;
             rearLeft.motorTorque  = 0f;
             rearRight.motorTorque = 0f;
             return;
         }
         if (accel < 0 && currentSpeed >= reverseSpeed)
         {
+            frontLeft.motorTorque = 0f;
+            frontRight.motorTorque = 0f;
             rearLeft.motorTorque  = 0f;
             rearRight.motorTorque = 0f;
             return;
         }
 
-        rearLeft.motorTorque  = accel * motorForce;
-        rearRight.motorTorque = accel * motorForce;
+        float rearTorque = accel * motorForce * 0.6f;
+        float frontTorque = accel * motorForce * 0.4f; // 0.4 strength for front
+
+        rearLeft.motorTorque  = accel * rearTorque;
+        rearRight.motorTorque = accel * rearTorque;
+        frontLeft.motorTorque = frontTorque;
+        frontRight.motorTorque = frontTorque;
     }
 
     private void HandleSteering(float steer)
@@ -260,18 +282,41 @@ public class Vehicle : MonoBehaviour
 
         frontLeft.steerAngle  = currentSteerAngle;
         frontRight.steerAngle = currentSteerAngle;
+
+        if (currentSpeed > 1f && Mathf.Abs(steer) > 0.1f)
+        {
+            float turnHelp = steer * turnAssist * Mathf.InverseLerp(20f, 0f, currentSpeed);
+            rb.AddTorque(0f, turnHelp, 0f, ForceMode.Acceleration);
+        }
     }
 
-    private void HandleBraking(float accel, bool handbrake)
+    private void HandleBraking(float accel, float steer, bool handbrake)
     {
         if (handbrake)
         {
+            WheelFrictionCurve driftCurve = originalRearSidewaysFriction;
+            driftCurve.stiffness = driftSidewaysFriction;
+            rearLeft.sidewaysFriction  = driftCurve;
+            rearRight.sidewaysFriction = driftCurve;
+
             rearLeft.brakeTorque  = handbrakeForce;
             rearRight.brakeTorque = handbrakeForce;
             rearLeft.motorTorque  = 0f;
             rearRight.motorTorque = 0f;
+
+            // Rotate the car into the corner so it doesn't just slide straight
+            if (Mathf.Abs(steer) > 0.1f)
+                rb.AddTorque(transform.up * steer * driftYawAssist, ForceMode.Acceleration);
+
+            // Scrub speed based on how much the car is sliding sideways (tire friction loss)
+            float lateralSlip = Mathf.Abs(Vector3.Dot(rb.velocity, transform.right));
+            rb.AddForce(-rb.velocity.normalized * lateralSlip * driftDragForce, ForceMode.Force);
+
             return;
         }
+
+        rearLeft.sidewaysFriction  = originalRearSidewaysFriction;
+        rearRight.sidewaysFriction = originalRearSidewaysFriction;
 
         bool movingForward = Vector3.Dot(rb.velocity, transform.forward) > 0;
 

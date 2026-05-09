@@ -127,7 +127,7 @@ Transform:
   m_GameObject: {fileID: 3856215056164097093}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.353, z: -3.793}
+  m_LocalPosition: {x: 0, y: 1.353, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -614,13 +614,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 220910fddc31c6c4d92bfa09a7e75359, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  motorForce: 1500
-  maxSpeed: 1000
+  motorForce: 2500
+  maxSpeed: 3500
   reverseSpeed: 10
   brakeForce: 3000
-  handbrakeForce: 5000
-  maxSteerAngle: 35
-  steerSpeed: 5
+  handbrakeForce: 8000
+  maxSteerAngle: 40
+  steerSpeed: 20
   steerCurve:
     serializedVersion: 2
     m_Curve: []
@@ -629,8 +629,8 @@ MonoBehaviour:
     m_RotationOrder: 4
   landingBounceForce: 0.5
   airTimeThreshold: 0.2
-  shakeAmount: 0.1
-  downforce: 100
+  shakeAmount: 0.05
+  downforce: 80
   centerOfMassOffset: {x: 0, y: -0.5, z: 0}
   uprightStrength: 5
   uprightDeadzone: 15
