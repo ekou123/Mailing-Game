@@ -86,22 +86,6 @@ public class StandingState : State
 
         jump = jumpAction != null && jumpAction.WasPressedThisFrame();
 
-        if (lookAction != null)
-        {
-            Vector2 look = lookAction.ReadValue<Vector2>();
-
-            character.yaw   += look.x * character.lookSensitivity;
-            character.pitch -= look.y * character.lookSensitivity;
-            character.pitch = Mathf.Clamp(character.pitch, character.pitchMin, character.pitchMax);
-
-            // Yaw rotates the body as before
-            character.transform.rotation = Quaternion.Euler(0f, character.yaw, 0f);
-
-            // Pitch rotates the FirstPersonAnchor — Cinemachine reads this
-            if (character.firstPersonAnchor != null)
-                character.firstPersonAnchor.localRotation = Quaternion.Euler(character.pitch, 0f, 0f);
-        }
-
         Vector3 camForward = character.firstPersonAnchor.forward;
         Vector3 camRight   = character.firstPersonAnchor.right;
         camForward.y = 0f;

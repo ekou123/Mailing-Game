@@ -10,10 +10,7 @@ public class State
 {
     public Character character;
     public StateMachine stateMachine;
-    bool inventoryOpen;
-    bool lootMenuOpen;
-
-    protected Vector3 gravityVelocity;
+protected Vector3 gravityVelocity;
     protected Vector3 velocity;
     protected Vector2 input;
 
@@ -47,7 +44,7 @@ public class State
         // crouchAction = character.playerInput.actions["Crouch"];
         // drawWeaponAction = character.playerInput.actions["DrawWeapon"];
         // attackAction = character.playerInput.actions["Attack1"];
-        // inventoryAction = character.playerInput.actions["Inventory"];
+        inventoryAction = character.playerInput.actions["Inventory"];
         interactAction = character.playerInput.actions["Interact"];
         // interactUIAction = character.playerInput.actions["InteractUI"];
         // dropItemAction = character.playerInput.actions["DropItem"];
@@ -82,6 +79,8 @@ public class State
         if (character.cameraPivot != null)
             character.cameraPivot.localRotation = Quaternion.Euler(character.pitch, 0f, 0f);
     }
+
+    
 
     public virtual void HandleInput()
     {

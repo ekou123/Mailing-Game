@@ -15,9 +15,15 @@ public class Character : MonoBehaviourPunCallbacks
     [Header("PlayerObject")]
     public Transform firstPersonAnchor;
     public Transform cameraPivot;
-    public Canvas inventoryCanvas;
     public CinemachineVirtualCamera playerVCam;
     public CinemachineVirtualCamera vehicleVCam;
+    [HideInInspector] public CinemachineBrain cinemachineBrain;
+
+    [Header("UI")]
+    public GameObject mainCanvasPrefab;
+    public GameObject inventoryUI;
+    private bool inventoryOpen = false;
+    
 
     public event Action<Character> OnCharacterInitialized;
 
@@ -69,6 +75,7 @@ public class Character : MonoBehaviourPunCallbacks
     public CombatState combatting;
     public AttackingState attacking;
     public DrivingState driving;
+    public LootingState looting;
 
     [HideInInspector]
     public float gravityValue = -9.81f;
@@ -90,31 +97,34 @@ public class Character : MonoBehaviourPunCallbacks
     public Vector3 launchHorizontalVelocity;
     
 
-    private void Awake() 
-    {
+    private bool IsLocalPlayer => !PhotonNetwork.IsConnected || photonView.IsMine;
 
-        if (photonView.IsMine)
+    private void Awake()
+    {
+        if (IsLocalPlayer)
         {
             GetComponent<PlayerInput>().enabled = true;
             this.enabled = true;
+
+            if (inventoryUI != null)
+                inventoryUI.SetActive(false);
         }
         else
         {
             GetComponent<PlayerInput>().enabled = false;
+
+            if (inventoryUI != null)
+                Destroy(inventoryUI);
         }
 
-        
-        // cameraTransform = GetComponentInChildren<Camera>().transform;
         animator = GetComponent<Animator>();
         playerInput = GetComponent<PlayerInput>();
         rb = GetComponent<Rigidbody>();
-        // cameraTransform = Camera.main.transform;
-
-        //cameraPivot = GetComponentInChildren<Camera>().transform;
-
         groundSensor = GetComponent<GroundSensor>();
-        
-        
+        cinemachineBrain = GetComponentInChildren<CinemachineBrain>();
+
+        if (cinemachineBrain != null)
+            cinemachineBrain.enabled = false;
 
         movementSM = new StateMachine();
         standing = new StandingState(this, movementSM);
@@ -124,35 +134,91 @@ public class Character : MonoBehaviourPunCallbacks
         combatting = new CombatState(this, movementSM);
         attacking = new AttackingState(this, movementSM);
         driving = new DrivingState(this, movementSM);
+        looting = new LootingState(this, movementSM);
         movementSM.Initialize(standing);
 
         playerSpeed = playerBaseSpeed;
-
-        // normalColliderHeight = controller.height;
         gravityValue *= gravityMultiplier;
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        
     }
 
 
     void Start()
     {
-        Debug.Log($"RB useGravity={rb.useGravity} gravityValue={gravityValue}");
-        
-        
+        if (IsLocalPlayer)
+        {
+            if (mainCanvasPrefab == null)
+            {
+                Debug.LogWarning("mainCanvasPrefab is not assigned on Character.");
+                return;
+            }
+
+            GameObject canvas = Instantiate(mainCanvasPrefab);
+
+            InventoryUI inventoryUIScript = canvas.GetComponentInChildren<InventoryUI>(true);
+
+            if (inventoryUIScript != null)
+            {
+                inventoryUI = inventoryUIScript.gameObject;
+                inventoryUI.SetActive(false);
+
+                Inventory playerInventory = GetComponent<Inventory>();
+                if (playerInventory != null)
+                    inventoryUIScript.SetInventory(playerInventory);
+                else
+                    Debug.LogWarning("No Inventory component found on Player.");
+            }
+            else
+            {
+                Debug.LogWarning("No InventoryUI component found in MainCanvas prefab.");
+            }
+        }
     }
 
     // Update is called once per frame
     void Update()
-    {      
-        movementSM.currentState.HandleInput();
-        movementSM.currentState.LogicUpdate();
+    {
+        if (!IsLocalPlayer)
+            return;
+
+        if (Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame)
+        {
+            ToggleInventory();
+        }
+
+        if (!inventoryOpen)
+        {
+            movementSM.currentState.HandleInput();
+            movementSM.currentState.LogicUpdate();
+        }
+    }
+
+    private void ToggleInventory()
+    {
+        inventoryOpen = !inventoryOpen;
+
+        if (inventoryUI != null)
+        {
+            inventoryUI.SetActive(inventoryOpen);
+        }
+
+        if (inventoryOpen)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
     }
 
     void FixedUpdate()
     {
+        if (!IsLocalPlayer) return;
         movementSM.currentState.PhysicsUpdate();
     }
 

@@ -13,11 +13,15 @@ public class LootingState : State
     // Start is called before the first frame update
     public override void Enter()
     {
-        Debug.Log("Enter state: " + this.ToString());
+        base.Enter();
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
         character.playerInput.actions.Disable();
+        inventoryAction?.Enable();
+
+        
     }
+
 
     private void OnEnable() 
     {
@@ -26,12 +30,9 @@ public class LootingState : State
 
     public override void HandleInput()
     {
-        
-        if (interactAction.triggered)
+        if (inventoryAction != null && inventoryAction.WasPressedThisFrame())
         {
-            
-            
-            //character.GetComponent<Inventory>().UpdateInventoryUI();
+            stateMachine.ChangeState(character.standing);
         }
     }
 
@@ -42,8 +43,11 @@ public class LootingState : State
 
     public override void Exit()
     {
+        if (character.inventoryUI != null)
+            character.inventoryUI.gameObject.SetActive(false);
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
         character.playerInput.actions.Enable();
     }
+
 }

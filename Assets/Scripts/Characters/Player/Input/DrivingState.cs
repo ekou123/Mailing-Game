@@ -39,6 +39,7 @@ public class DrivingState : State
     {
         base.Enter();
 
+        if (character.cinemachineBrain != null) character.cinemachineBrain.enabled = true;
         character.playerInput.SwitchCurrentActionMap("Vehicle");
 
         var actions = character.playerInput.actions;
@@ -210,6 +211,8 @@ public class DrivingState : State
         character.vehicleVCam.Priority = 0;
         character.playerVCam.Priority  = 10;
 
-        character.GetComponent<CapsuleCollider>().enabled = true;   
+        if (character.cinemachineBrain != null) character.cinemachineBrain.enabled = false;
+
+        character.GetComponent<CapsuleCollider>().enabled = true;
     }
 }
