@@ -3,8 +3,9 @@ using UnityEngine;
 
 public class Inventory : MonoBehaviour
 {
-    public int slotCount = 27;
-    public ItemData[] slots;
+    public int slotCount = 31;
+    public ItemData[] items;
+    public ItemData[] slots => items;
 
     [SerializeField] private ItemData testItem;
 
@@ -12,7 +13,7 @@ public class Inventory : MonoBehaviour
 
     void Awake()
     {
-        slots = new ItemData[slotCount];
+        items = new ItemData[slotCount];
     }
 
     void Start()
@@ -23,11 +24,11 @@ public class Inventory : MonoBehaviour
 
     public bool AddItem(ItemData item)
     {
-        for (int i = 0; i < slots.Length; i++)
+        for (int i = 0; i < items.Length; i++)
         {
-            if (slots[i] == null)
+            if (items[i] == null)
             {
-                slots[i] = item;
+                items[i] = item;
                 OnInventoryChanged?.Invoke();
                 return true;
             }
@@ -37,11 +38,11 @@ public class Inventory : MonoBehaviour
 
     public void RemoveItem(ItemData item)
     {
-        for (int i = 0; i < slots.Length; i++)
+        for (int i = 0; i < items.Length; i++)
         {
-            if (slots[i] == item)
+            if (items[i] == item)
             {
-                slots[i] = null;
+                items[i] = null;
                 OnInventoryChanged?.Invoke();
                 return;
             }
@@ -50,8 +51,8 @@ public class Inventory : MonoBehaviour
 
     public void SetSlot(int index, ItemData item)
     {
-        if (index < 0 || index >= slots.Length) return;
-        slots[index] = item;
+        if (index < 0 || index >= items.Length) return;
+        items[index] = item;
         OnInventoryChanged?.Invoke();
     }
 }

@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerClickHandler
 {
     [SerializeField] private Image itemIcon;
     [SerializeField] private TextMeshProUGUI quantityText;
@@ -44,9 +44,7 @@ public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         itemIcon.sprite = item.icon;
         itemIcon.enabled = true;
 
-        Debug.Log("Set Item.");
-
-        if (quantityText != null) quantityText.text = "";
+        if (quantityText != null) quantityText.text = item.itemName;
     }
 
     public void ClearSlot()
@@ -86,5 +84,47 @@ public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     public void OnDrop(PointerEventData eventData)
     {
         InventoryUI.Instance.Drop(this);
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (eventData.button == PointerEventData.InputButton.Right && Item != null)
+        {
+            // Drop item to ground
+            DropItemToGround();
+        }
+    }
+
+    private void DropItemToGround()
+    {
+        if (Item == null) return;
+
+        // Find the player
+        Character player = FindObjectOfType<Character>();
+        if (player == null) return;
+
+        // Instantiate ground item at player's position
+        GameObject groundItemPrefab = Resources.Load<GameObject>("GroundItem"); // Assuming prefab is in Resources
+        if (groundItemPrefab != null)
+        {
+            Vector3 dropPosition = player.transform.position + player.transform.forward * 2f; // Drop in front of player
+            GameObject groundItemObj = Instantiate(groundItemPrefab, dropPosition, Quaternion.identity);
+            GroundItem groundItem = groundItemObj.GetComponent<GroundItem>();
+            if (groundItem != null)
+            {
+                groundItem.itemData = Item;
+            }
+        }
+        else
+        {
+            Debug.LogWarning("GroundItem prefab not found in Resources. Please create a GroundItem prefab in Assets/Resources/GroundItem.prefab");
+        }
+
+        // Remove from inventory
+        Inventory inventory = player.GetComponent<Inventory>();
+        if (inventory != null)
+        {
+            inventory.RemoveItem(Item);
+        }
     }
 }
