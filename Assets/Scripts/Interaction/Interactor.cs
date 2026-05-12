@@ -1,19 +1,26 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions.Must;
 using UnityEngine.InputSystem;
 
 public class Interactor : MonoBehaviour
 {
     [SerializeField] private Transform _interactionPoint;
     [SerializeField] private float _interactionPointRadius = 0.5f;
-    [SerializeField] private LayerMask _interactableMask;
+    [SerializeField] private LayerMask _interactableMask = ~0;
 
-    private readonly Collider[] _colliders = new Collider[3];
+    private readonly Collider[] _colliders = new Collider[8];
     [SerializeField] private int _numFound;
 
     private InputAction interactAction;
     private Character playerCharacter;
+
+    private void OnEnable()
+    {
+        if (_interactionPoint == null)
+            _interactionPoint = transform;
+    }
 
     private void Start()
     {
@@ -26,37 +33,55 @@ public class Interactor : MonoBehaviour
 
         interactAction = playerCharacter.playerInput.actions["Interact"];
 
-
         if (interactAction != null)
         {
             interactAction.Enable();
             interactAction.performed += OnInteractPerformed;
-            interactAction.canceled  += OnInteractPerformed;
+        }
+        else
+        {
+            Debug.LogWarning("Interact action not found on player input. Check the InputAction asset and action name.");
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (interactAction != null)
+        {
+            interactAction.performed -= OnInteractPerformed;
         }
     }
 
     void Update()
     {
-        
-
-        
     }
 
     private void OnInteractPerformed(UnityEngine.InputSystem.InputAction.CallbackContext ctx)
     {
-        _numFound = Physics.OverlapSphereNonAlloc(_interactionPoint.position, _interactionPointRadius, _colliders, _interactableMask);
+        if (_interactionPoint == null)
+            _interactionPoint = transform;
 
-        if (_numFound > 0)
+        LayerMask mask = _interactableMask.value == 0 ? ~0 : _interactableMask;
+        _numFound = Physics.OverlapSphereNonAlloc(_interactionPoint.position, _interactionPointRadius, _colliders, mask);
+
+        if (_numFound <= 0)
         {
-            var interactable = _colliders[0].GetComponent<IInteractable>();
+            Debug.Log("Interact Performed: no interactables found.");
+            return;
+        }
 
-            if (interactable != null )
+        for (int i = 0; i < _numFound; i++)
+        {
+            var interactable = _colliders[i].GetComponent<IInteractable>();
+            if (interactable != null)
             {
+                Debug.Log("Interacting with " + _colliders[i].name);
                 interactable.Interact(this);
+                return;
             }
         }
-        
-        Debug.Log("Interact Performed");
+
+        Debug.Log("Interact Performed: hit colliders but no IInteractable present.");
     }
 
 

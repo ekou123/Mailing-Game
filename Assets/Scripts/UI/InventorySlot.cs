@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerClickHandler
+public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] private Image itemIcon;
     [SerializeField] private TextMeshProUGUI quantityText;
@@ -31,7 +31,6 @@ public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
 
     public void SetItem(ItemData item)
     {
-        Debug.Log("Setting item...");
         if (item == null) { ClearSlot(); return; }
 
         Item = item;
@@ -88,7 +87,12 @@ public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (eventData.button == PointerEventData.InputButton.Right && Item != null)
+        if (Item == null) return;
+
+        if (eventData.button == PointerEventData.InputButton.Left) {
+            InventoryUI.Instance.SelectItem(this);
+        }
+        if (eventData.button == PointerEventData.InputButton.Right)
         {
             // Drop item to ground
             DropItemToGround();
@@ -126,5 +130,18 @@ public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         {
             inventory.RemoveItem(Item);
         }
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (Item == null) return;
+        InventoryUI.Instance.SelectItem(this);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        // Clear details when leaving slot
+        if (InventoryUI.Instance != null)
+            InventoryUI.Instance.SelectItem(null);
     }
 }

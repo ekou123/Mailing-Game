@@ -9,6 +9,11 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private InventorySlot[] slots;
     [SerializeField] private Image dragIcon;
 
+    [SerializeField] private ItemDetailsUI itemDetailsUI;
+
+    private InventorySlot selectedSlot;
+
+
     private Inventory inventory;
     private InventorySlot dragSource;
     private int dragSourceIndex = -1;
@@ -23,6 +28,54 @@ public class InventoryUI : MonoBehaviour
 
         if (dragIcon != null)
             dragIcon.gameObject.SetActive(false);
+
+        // Auto-find ItemDetailsUI if not assigned
+        if (itemDetailsUI == null)
+        {
+            itemDetailsUI = GetComponentInChildren<ItemDetailsUI>(true);
+            if (itemDetailsUI == null)
+            {
+                itemDetailsUI = FindObjectOfType<ItemDetailsUI>(true);
+            }
+
+            if (itemDetailsUI == null)
+            {
+                Debug.LogWarning("[InventoryUI] ItemDetailsUI not found! Please assign it in the Inspector or ensure it exists in the scene.");
+            }
+            else
+            {
+                Debug.Log("[InventoryUI] ItemDetailsUI auto-found and assigned.");
+            }
+        }
+    }
+
+    public void SelectItem(InventorySlot slot)
+    {
+        selectedSlot = slot;
+
+        if (itemDetailsUI == null)
+        {
+            itemDetailsUI = GetComponentInChildren<ItemDetailsUI>(true);
+            if (itemDetailsUI == null)
+                itemDetailsUI = FindObjectOfType<ItemDetailsUI>(true);
+        }
+
+        if (itemDetailsUI == null)
+        {
+            Debug.LogWarning("[InventoryUI] itemDetailsUI is still not assigned when calling SelectItem.");
+            return;
+        }
+
+        if (slot != null)
+        {
+            Debug.Log($"[InventoryUI] SelectItem called with item: {slot.Item?.itemName ?? "null"}");
+            itemDetailsUI.Show(slot.Item);
+        }
+        else
+        {
+            Debug.Log("[InventoryUI] SelectItem called with null slot, clearing details");
+            itemDetailsUI.Clear();
+        }
     }
 
     public void SetInventory(Inventory newInventory)
