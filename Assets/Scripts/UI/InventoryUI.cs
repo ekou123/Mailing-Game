@@ -53,8 +53,11 @@ public class InventoryUI : MonoBehaviour
     {
         selectedSlot = slot;
 
+        int james = 2;
+
         if (itemDetailsUI == null)
         {
+            
             itemDetailsUI = GetComponentInChildren<ItemDetailsUI>(true);
             if (itemDetailsUI == null)
                 itemDetailsUI = FindObjectOfType<ItemDetailsUI>(true);
