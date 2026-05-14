@@ -3,45 +3,35 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
+public class InventorySlot : MonoBehaviour, IDropHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
-    [SerializeField] private Image itemIcon;
     [SerializeField] private TextMeshProUGUI quantityText;
 
     public ItemData Item { get; private set; }
 
-    void Awake()
-    {
-        if (itemIcon == null)
-        {
-            // Prefer a child Image (item icon), fall back to root Image (slot background)
-            foreach (Image img in GetComponentsInChildren<Image>())
-            {
-                if (img.gameObject != gameObject) { itemIcon = img; break; }
-            }
-            if (itemIcon == null)
-                itemIcon = GetComponent<Image>();
-        }
-
-        if (itemIcon == null)
-            Debug.LogWarning($"[InventorySlot] No Image found on {gameObject.name} or its children.");
-        else
-            itemIcon.enabled = false;
-    }
+    // Finds the InventoryItem child, including disabled ones (e.g. cleared slots).
+    private InventoryItem ItemChild => GetComponentInChildren<InventoryItem>(true);
 
     public void SetItem(ItemData item)
     {
         if (item == null) { ClearSlot(); return; }
-
         Item = item;
 
-        if (itemIcon == null)
+        InventoryItem invItem = ItemChild;
+        if (invItem == null)
         {
-            Debug.LogWarning($"{name} has no icon Image assigned.");
-            return;
+            var go = new GameObject("ItemIcon", typeof(RectTransform), typeof(Image), typeof(InventoryItem));
+            go.transform.SetParent(transform, false);
+            invItem = go.GetComponent<InventoryItem>();
+            invItem.image = go.GetComponent<Image>();
+            invItem.image.preserveAspect = true;
         }
-        itemIcon.sprite = item.icon;
-        itemIcon.enabled = true;
+
+        invItem.gameObject.SetActive(true);
+        invItem.image.sprite = item.icon;
+        invItem.image.raycastTarget = true;
+        invItem.itemData = item;
+        invItem.FillParent();
 
         if (quantityText != null) quantityText.text = item.itemName;
     }
@@ -49,87 +39,94 @@ public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     public void ClearSlot()
     {
         Item = null;
-        itemIcon.sprite = null;
-        itemIcon.enabled = false;
-
+        InventoryItem invItem = ItemChild;
+        if (invItem != null)
+            invItem.gameObject.SetActive(false);
         if (quantityText != null) quantityText.text = "";
-    }
-
-    public void SetIconAlpha(float alpha)
-    {
-        if (itemIcon == null) return;
-
-        Color c = itemIcon.color;
-        c.a = alpha;
-        itemIcon.color = c;
-    }
-
-    public void OnBeginDrag(PointerEventData eventData)
-    {
-        if (Item == null) return;
-        InventoryUI.Instance.BeginDrag(this, eventData);
-    }
-
-    public void OnDrag(PointerEventData eventData)
-    {
-        InventoryUI.Instance.UpdateDrag(eventData);
-    }
-
-    public void OnEndDrag(PointerEventData eventData)
-    {
-        InventoryUI.Instance.EndDrag();
     }
 
     public void OnDrop(PointerEventData eventData)
     {
-        InventoryUI.Instance.Drop(this);
+        InventoryItem draggedItem = eventData.pointerDrag.GetComponent<InventoryItem>();
+        if (draggedItem == null) return;
+
+        InventorySlot sourceSlot = null;
+        if (draggedItem.parentAfterDrag != null)
+            draggedItem.parentAfterDrag.TryGetComponent(out sourceSlot);
+
+        if (sourceSlot == this) return;
+
+        // If this slot already has an item, send it back to the source slot.
+        InventoryItem existingItem = ItemChild;
+        if (existingItem != null)
+        {
+            if (sourceSlot != null)
+            {
+                existingItem.transform.SetParent(sourceSlot.transform, false);
+                existingItem.FillParent();
+                sourceSlot.Item = existingItem.itemData;
+            }
+            else
+            {
+                existingItem.gameObject.SetActive(false);
+            }
+        }
+        else if (sourceSlot != null)
+        {
+            // Source slot becomes empty — its visual already left with the drag.
+            sourceSlot.Item = null;
+        }
+
+        // Accept the dragged item; OnEndDrag will reparent it here.
+        draggedItem.parentAfterDrag = transform;
+        Item = draggedItem.itemData;
+
+        // Sync inventory data without firing OnInventoryChanged (avoids Refresh during drag).
+        if (sourceSlot != null)
+        {
+            int srcIdx = InventoryUI.Instance.GetSlotIndex(sourceSlot);
+            int dstIdx = InventoryUI.Instance.GetSlotIndex(this);
+            Inventory inv = InventoryUI.Instance.Inventory;
+            if (inv != null && srcIdx >= 0 && dstIdx >= 0)
+                (inv.items[srcIdx], inv.items[dstIdx]) = (inv.items[dstIdx], inv.items[srcIdx]);
+        }
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
         if (Item == null) return;
 
-        if (eventData.button == PointerEventData.InputButton.Left) {
+        if (eventData.button == PointerEventData.InputButton.Left)
             InventoryUI.Instance.SelectItem(this);
-        }
+
         if (eventData.button == PointerEventData.InputButton.Right)
-        {
-            // Drop item to ground
             DropItemToGround();
-        }
     }
 
     private void DropItemToGround()
     {
         if (Item == null) return;
 
-        // Find the player
         Character player = FindObjectOfType<Character>();
         if (player == null) return;
 
-        // Instantiate ground item at player's position
-        GameObject groundItemPrefab = Resources.Load<GameObject>("GroundItem"); // Assuming prefab is in Resources
+        GameObject groundItemPrefab = Resources.Load<GameObject>("GroundItem");
         if (groundItemPrefab != null)
         {
-            Vector3 dropPosition = player.transform.position + player.transform.forward * 2f; // Drop in front of player
+            Vector3 dropPosition = player.transform.position + player.transform.forward * 2f;
             GameObject groundItemObj = Instantiate(groundItemPrefab, dropPosition, Quaternion.identity);
             GroundItem groundItem = groundItemObj.GetComponent<GroundItem>();
             if (groundItem != null)
-            {
                 groundItem.itemData = Item;
-            }
         }
         else
         {
-            Debug.LogWarning("GroundItem prefab not found in Resources. Please create a GroundItem prefab in Assets/Resources/GroundItem.prefab");
+            Debug.LogWarning("GroundItem prefab not found in Resources/GroundItem.prefab");
         }
 
-        // Remove from inventory
         Inventory inventory = player.GetComponent<Inventory>();
         if (inventory != null)
-        {
             inventory.RemoveItem(Item);
-        }
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -140,7 +137,6 @@ public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        // Clear details when leaving slot
         if (InventoryUI.Instance != null)
             InventoryUI.Instance.SelectItem(null);
     }

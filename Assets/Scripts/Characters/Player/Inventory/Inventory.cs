@@ -55,4 +55,11 @@ public class Inventory : MonoBehaviour
         items[index] = item;
         OnInventoryChanged?.Invoke();
     }
+
+    public void SwapSlots(int a, int b)
+    {
+        if (a < 0 || a >= items.Length || b < 0 || b >= items.Length) return;
+        (items[a], items[b]) = (items[b], items[a]);
+        OnInventoryChanged?.Invoke();
+    }
 }

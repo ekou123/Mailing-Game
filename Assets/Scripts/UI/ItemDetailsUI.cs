@@ -77,7 +77,15 @@ public class ItemDetailsUI : MonoBehaviour
             itemNameText.text = item.itemName;
 
         if (descriptionText != null)
-            descriptionText.text = item.description;
+        {
+            var sb = new System.Text.StringBuilder();
+            if (!string.IsNullOrEmpty(item.description))
+                sb.AppendLine(item.description);
+            if (item.stats != null)
+                foreach (var stat in item.stats)
+                    sb.AppendLine($"{stat.label}: {stat.value}");
+            descriptionText.text = sb.ToString().TrimEnd();
+        }
 
         Debug.Log($"[ItemDetailsUI] Showing item: {item.itemName}");
     }

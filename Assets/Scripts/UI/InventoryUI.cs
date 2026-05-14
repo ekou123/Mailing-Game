@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 
 public class InventoryUI : MonoBehaviour
 {
@@ -15,9 +14,10 @@ public class InventoryUI : MonoBehaviour
 
 
     private Inventory inventory;
-    private InventorySlot dragSource;
-    private int dragSourceIndex = -1;
-    private ItemData draggedItem;
+
+    public Image DragIcon => dragIcon;
+    public Inventory Inventory => inventory;
+    public int GetSlotIndex(InventorySlot slot) => System.Array.IndexOf(slots, slot);
 
     void Awake()
     {
@@ -25,6 +25,21 @@ public class InventoryUI : MonoBehaviour
 
         if (slots == null || slots.Length == 0 || System.Array.Exists(slots, s => s == null))
             slots = GetComponentsInChildren<InventorySlot>(true);
+
+        if (dragIcon == null)
+        {
+            Canvas rootCanvas = GetComponentInParent<Canvas>();
+            if (rootCanvas != null)
+            {
+                GameObject go = new("DragIcon");
+                go.transform.SetParent(rootCanvas.transform, false);
+                dragIcon = go.AddComponent<Image>();
+                dragIcon.raycastTarget = false;
+                dragIcon.preserveAspect = true;
+                dragIcon.GetComponent<RectTransform>().sizeDelta = new Vector2(64, 64);
+                go.transform.SetAsLastSibling();
+            }
+        }
 
         if (dragIcon != null)
             dragIcon.gameObject.SetActive(false);
@@ -52,8 +67,6 @@ public class InventoryUI : MonoBehaviour
     public void SelectItem(InventorySlot slot)
     {
         selectedSlot = slot;
-
-        int james = 2;
 
         if (itemDetailsUI == null)
         {
@@ -114,64 +127,4 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
-    public void BeginDrag(InventorySlot source, PointerEventData eventData)
-    {
-        dragSource = source;
-        draggedItem = source.Item;
-        dragSourceIndex = System.Array.IndexOf(slots, source);
-
-        if (dragIcon != null)
-        {
-            dragIcon.sprite = draggedItem.icon;
-            dragIcon.gameObject.SetActive(true);
-            dragIcon.transform.position = eventData.position;
-        }
-
-        source.SetIconAlpha(0.4f);
-    }
-
-    public void UpdateDrag(PointerEventData eventData)
-    {
-        if (dragIcon != null && dragIcon.gameObject.activeSelf)
-            dragIcon.transform.position = eventData.position;
-    }
-
-    public void Drop(InventorySlot target)
-    {
-        if (dragSource == null || draggedItem == null) return;
-
-        int targetIndex = System.Array.IndexOf(slots, target);
-
-        // Swap in inventory data
-        if (dragSourceIndex >= 0 && targetIndex >= 0)
-        {
-            inventory.SetSlot(dragSourceIndex, target.Item);
-            inventory.SetSlot(targetIndex, draggedItem);
-        }
-
-        // Swap visuals directly
-        dragSource.SetItem(target.Item);
-        target.SetItem(draggedItem);
-
-        Cleanup();
-    }
-
-    public void EndDrag()
-    {
-        if (dragSource != null)
-            Cleanup();
-    }
-
-    private void Cleanup()
-    {
-        if (dragSource != null)
-            dragSource.SetIconAlpha(1f);
-
-        if (dragIcon != null)
-            dragIcon.gameObject.SetActive(false);
-
-        dragSource = null;
-        draggedItem = null;
-        dragSourceIndex = -1;
-    }
 }

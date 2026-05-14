@@ -1,0 +1,30 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Items/Armour")]
+public class ArmourData : ItemData
+{
+    [Header("Armour Stats")]
+    public int defence;
+    public ArmourSlot armourSlot;
+    public float weight;
+
+    public override IEnumerable<ItemStat> GetDisplayStats()
+    {
+        return new List<ItemStat>
+        {
+            new() { label = "Slot",    value = armourSlot.ToString() },
+            new() { label = "Defence", value = defence.ToString() },
+            new() { label = "Weight",  value = weight.ToString("0.##") },
+        };
+    }
+}
+
+public enum ArmourSlot
+{
+    Head,
+    Chest,
+    Legs,
+    Feet,
+    Hands
+}
