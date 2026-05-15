@@ -5,7 +5,7 @@ using UnityEngine.UI;
 public class InventoryItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [HideInInspector] public Image image;
-    [HideInInspector] public ItemData itemData;
+    [HideInInspector] public ItemInstance itemInstance;
     [HideInInspector] public Transform parentAfterDrag;
 
     void Awake()
@@ -20,7 +20,6 @@ public class InventoryItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         transform.SetParent(transform.root);
         transform.SetAsLastSibling();
 
-        // Switch from stretch anchors to a fixed drag size
         RectTransform rt = GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);

@@ -84,13 +84,13 @@ public class InventoryUI : MonoBehaviour
 
         if (slot != null)
         {
-            Debug.Log($"[InventoryUI] SelectItem called with item: {slot.Item?.itemName ?? "null"}");
+            Debug.Log($"[InventoryUI] SelectItem called with item: {slot.Item?.data.itemName ?? "null"}");
             itemDetailsUI.Show(slot.Item);
         }
         else
         {
             Debug.Log("[InventoryUI] SelectItem called with null slot, clearing details");
-            itemDetailsUI.Clear();
+            // itemDetailsUI.Clear();
         }
     }
 
@@ -103,6 +103,11 @@ public class InventoryUI : MonoBehaviour
 
         inventory = newInventory;
         inventory.OnInventoryChanged += Refresh;
+        Refresh();
+    }
+
+    private void OnEnable()
+    {
         Refresh();
     }
 

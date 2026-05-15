@@ -1,11 +1,12 @@
 using System;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Inventory : MonoBehaviour
 {
     public int slotCount = 31;
-    public ItemData[] items;
-    public ItemData[] slots => items;
+    public ItemInstance[] items;
+    public ItemInstance[] slots => items;
 
     [SerializeField] private ItemData testItem;
 
@@ -13,16 +14,14 @@ public class Inventory : MonoBehaviour
 
     void Awake()
     {
-        items = new ItemData[slotCount];
+        items = new ItemInstance[slotCount];
     }
 
     void Start()
     {
-        if (testItem != null)
-            AddItem(testItem);
     }
 
-    public bool AddItem(ItemData item)
+    public bool AddItem(ItemInstance item)
     {
         for (int i = 0; i < items.Length; i++)
         {
@@ -33,10 +32,10 @@ public class Inventory : MonoBehaviour
                 return true;
             }
         }
-        return false; // inventory full
+        return false;
     }
 
-    public void RemoveItem(ItemData item)
+    public void RemoveItem(ItemInstance item)
     {
         for (int i = 0; i < items.Length; i++)
         {
@@ -49,7 +48,7 @@ public class Inventory : MonoBehaviour
         }
     }
 
-    public void SetSlot(int index, ItemData item)
+    public void SetSlot(int index, ItemInstance item)
     {
         if (index < 0 || index >= items.Length) return;
         items[index] = item;

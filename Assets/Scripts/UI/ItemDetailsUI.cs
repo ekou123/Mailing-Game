@@ -55,7 +55,7 @@ public class ItemDetailsUI : MonoBehaviour
             Debug.LogWarning("[ItemDetailsUI] Could not find description TextMeshProUGUI component!");
     }
 
-    public void Show(ItemData item)
+    public void Show(ItemInstance item)
     {
         Debug.Log("Showing item");
         if (item == null)
@@ -66,7 +66,7 @@ public class ItemDetailsUI : MonoBehaviour
 
         if (icon != null)
         {
-            icon.sprite = item.icon;
+            icon.sprite = item.data.icon;
             icon.enabled = true;
         }
 
@@ -74,20 +74,19 @@ public class ItemDetailsUI : MonoBehaviour
             gameObject.SetActive(true);
 
         if (itemNameText != null)
-            itemNameText.text = item.itemName;
+            itemNameText.text = item.data.itemName;
 
         if (descriptionText != null)
         {
             var sb = new System.Text.StringBuilder();
-            if (!string.IsNullOrEmpty(item.description))
-                sb.AppendLine(item.description);
-            if (item.stats != null)
-                foreach (var stat in item.stats)
-                    sb.AppendLine($"{stat.label}: {stat.value}");
+            if (!string.IsNullOrEmpty(item.data.description))
+                sb.AppendLine(item.data.description);
+            foreach (var stat in item.GetDisplayStats())
+                sb.AppendLine($"{stat.label}: {stat.value}");
             descriptionText.text = sb.ToString().TrimEnd();
         }
 
-        Debug.Log($"[ItemDetailsUI] Showing item: {item.itemName}");
+        Debug.Log($"[ItemDetailsUI] Showing item: {item.data.itemName}");
     }
 
     public void Clear()

@@ -15,6 +15,7 @@ MonoBehaviour:
   itemName: Test
   icon: {fileID: 21300000, guid: 436c5e63723127948af8857e903f658a, type: 3}
   description: Test Description
-  itemType: 0
-  worldPrefab: {fileID: 0}
+  itemType: 2
+  worldPrefab: {fileID: 2361824107881855712, guid: b8d5375d0105dd54ba77a210316d5298,
+    type: 3}
   stats: []

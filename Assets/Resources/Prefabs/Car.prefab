@@ -402,17 +402,17 @@ PrefabInstance:
     - target: {fileID: 1880317207959290724, guid: c4cad50aa03bbca42938fe318344950b,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -35.902
+      value: -141.05116
       objectReference: {fileID: 0}
     - target: {fileID: 1880317207959290724, guid: c4cad50aa03bbca42938fe318344950b,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.93
+      value: 0.79
       objectReference: {fileID: 0}
     - target: {fileID: 1880317207959290724, guid: c4cad50aa03bbca42938fe318344950b,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -42.122
+      value: -292.4026
       objectReference: {fileID: 0}
     - target: {fileID: 1880317207959290724, guid: c4cad50aa03bbca42938fe318344950b,
         type: 3}
@@ -619,6 +619,9 @@ MonoBehaviour:
   reverseSpeed: 10
   brakeForce: 3000
   handbrakeForce: 8000
+  driftSidewaysFriction: 0.2
+  driftYawAssist: 20
+  driftDragForce: 25
   maxSteerAngle: 40
   steerSpeed: 20
   steerCurve:
@@ -627,6 +630,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  turnAssist: 10
   landingBounceForce: 0.5
   airTimeThreshold: 0.2
   shakeAmount: 0.05

@@ -3,16 +3,21 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+[RequireComponent(typeof(Image))]
 public class InventorySlot : MonoBehaviour, IDropHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] private TextMeshProUGUI quantityText;
 
-    public ItemData Item { get; private set; }
+    public ItemInstance Item { get; private set; }
 
-    // Finds the InventoryItem child, including disabled ones (e.g. cleared slots).
+    private void Awake()
+    {
+        GetComponent<Image>().raycastTarget = true;
+    }
+
     private InventoryItem ItemChild => GetComponentInChildren<InventoryItem>(true);
 
-    public void SetItem(ItemData item)
+    public void SetItem(ItemInstance item)
     {
         if (item == null) { ClearSlot(); return; }
         Item = item;
@@ -28,12 +33,12 @@ public class InventorySlot : MonoBehaviour, IDropHandler, IPointerClickHandler, 
         }
 
         invItem.gameObject.SetActive(true);
-        invItem.image.sprite = item.icon;
+        invItem.image.sprite = item.data.icon;
         invItem.image.raycastTarget = true;
-        invItem.itemData = item;
+        invItem.itemInstance = item;
         invItem.FillParent();
 
-        if (quantityText != null) quantityText.text = item.itemName;
+        if (quantityText != null) quantityText.text = item.data.itemName;
     }
 
     public void ClearSlot()
@@ -56,15 +61,16 @@ public class InventorySlot : MonoBehaviour, IDropHandler, IPointerClickHandler, 
 
         if (sourceSlot == this) return;
 
-        // If this slot already has an item, send it back to the source slot.
         InventoryItem existingItem = ItemChild;
-        if (existingItem != null)
+        bool hasExisting = existingItem != null && existingItem.gameObject.activeSelf;
+
+        if (hasExisting)
         {
             if (sourceSlot != null)
             {
                 existingItem.transform.SetParent(sourceSlot.transform, false);
                 existingItem.FillParent();
-                sourceSlot.Item = existingItem.itemData;
+                sourceSlot.Item = existingItem.itemInstance;
             }
             else
             {
@@ -73,15 +79,12 @@ public class InventorySlot : MonoBehaviour, IDropHandler, IPointerClickHandler, 
         }
         else if (sourceSlot != null)
         {
-            // Source slot becomes empty — its visual already left with the drag.
             sourceSlot.Item = null;
         }
 
-        // Accept the dragged item; OnEndDrag will reparent it here.
         draggedItem.parentAfterDrag = transform;
-        Item = draggedItem.itemData;
+        Item = draggedItem.itemInstance;
 
-        // Sync inventory data without firing OnInventoryChanged (avoids Refresh during drag).
         if (sourceSlot != null)
         {
             int srcIdx = InventoryUI.Instance.GetSlotIndex(sourceSlot);
@@ -117,7 +120,10 @@ public class InventorySlot : MonoBehaviour, IDropHandler, IPointerClickHandler, 
             GameObject groundItemObj = Instantiate(groundItemPrefab, dropPosition, Quaternion.identity);
             GroundItem groundItem = groundItemObj.GetComponent<GroundItem>();
             if (groundItem != null)
-                groundItem.itemData = Item;
+            {
+                groundItem.itemData = Item.data;
+                groundItem.quantity = Item.quantity;
+            }
         }
         else
         {

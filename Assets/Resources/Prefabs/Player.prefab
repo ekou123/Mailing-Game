@@ -51,6 +51,7 @@ GameObject:
   - component: {fileID: 2771745178043380654}
   - component: {fileID: -1518699751540269071}
   - component: {fileID: 3356237914871836556}
+  - component: {fileID: 2998640695468478338}
   - component: {fileID: 8804473530208603622}
   m_Layer: 0
   m_Name: Player
@@ -230,9 +231,10 @@ MonoBehaviour:
   playerVCam: {fileID: 1342903335643376891}
   vehicleVCam: {fileID: 3969338624818842707}
   cinemachineBrain: {fileID: 0}
-  mainCanvasPrefab: {fileID: 1927868080736378104, guid: 7a89e3546a15cb24caf1d1ff0a83d11c,
+  mainCanvasPrefab: {fileID: 5498982058941710721, guid: 7a89e3546a15cb24caf1d1ff0a83d11c,
     type: 3}
-  inventoryUI: {fileID: 0}
+  inventoryUI: {fileID: 4207951045291268514, guid: 2c39ac30d8658284ca5c85a4e5e5666c,
+    type: 3}
   strength: 0
   health: 0
   defense: 0
@@ -336,6 +338,21 @@ MonoBehaviour:
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
+--- !u!114 &2998640695468478338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2760878281095415534}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 630bb432ecc52854798881f24cd3f8d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slotCount: 27
+  items: []
+  testItem: {fileID: 11400000, guid: 3599269c72216404c80baee4199e592c, type: 2}
 --- !u!114 &8804473530208603622
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -643,7 +660,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
