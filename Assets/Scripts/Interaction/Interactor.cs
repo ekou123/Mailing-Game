@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 public class Interactor : MonoBehaviour
 {
+    
     [SerializeField] private Transform _interactionPoint;
     [SerializeField] private float _interactionPointRadius = 0.5f;
     [SerializeField] private LayerMask _interactableMask = ~0;
@@ -12,6 +13,7 @@ public class Interactor : MonoBehaviour
 
     private InputAction interactAction;
     private Character playerCharacter;
+    private IInteractable currentInteractable;
 
     private void Start()
     {
@@ -85,6 +87,47 @@ public class Interactor : MonoBehaviour
         }
 
         Debug.Log("Interact Performed: hit colliders but no IInteractable present.");
+    }
+
+    private void Update()
+    {
+        LayerMask mask = _interactableMask.value == 0 ? ~0 : _interactableMask;
+
+        int found = Physics.OverlapSphereNonAlloc(
+            _interactionPoint.position,
+            _interactionPointRadius,
+            _colliders,
+            mask
+        );
+
+        IInteractable nearest = null;
+        float nearestDistance = Mathf.Infinity;
+
+        for (int i = 0; i < found; i++)
+        {
+            var interactable = _colliders[i].GetComponentInParent<IInteractable>();
+            if (interactable == null) continue;
+
+            float distance = Vector3.Distance(
+                _interactionPoint.position,
+                _colliders[i].transform.position
+            );
+
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearest = interactable;
+            }
+        }
+
+        if (currentInteractable != nearest)
+        {
+            currentInteractable?.HidePrompt();
+
+            currentInteractable = nearest;
+
+            currentInteractable?.ShowPrompt();
+        }
     }
 
     void OnDrawGizmos()

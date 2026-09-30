@@ -5,37 +5,58 @@ public class GroundItem : MonoBehaviour, IInteractable
     public ItemData itemData;
     public int quantity = 1;
 
-    private bool _consumed;
+    [SerializeField] private WorldInteractionPrompt worldPrompt;
 
-    public string InteractionPrompt => itemData != null ? $"Pick up {itemData.itemName}" : "Pick up item";
+    public string InteractionPrompt
+    {
+        get
+        {
+            if (itemData == null)
+                return "Pick up item";
+
+            return $"Pick up {itemData.itemName}";
+        }
+    }
+
+    private void Awake()
+    {
+        if (worldPrompt == null)
+            worldPrompt = GetComponentInChildren<WorldInteractionPrompt>(true);
+    }
+
+    public void ShowPrompt()
+    {
+        if (worldPrompt != null)
+            worldPrompt.Show($"[E] {InteractionPrompt}");
+    }
+
+    public void HidePrompt()
+    {
+        if (worldPrompt != null)
+            worldPrompt.Hide();
+    }
 
     public bool Interact(Interactor interactor)
     {
-        if (_consumed) return false;
-        Debug.Log("Interacting with ground object");
-        if (itemData == null)
+        Inventory inventory = interactor.GetComponentInParent<Inventory>();
+
+        if (inventory == null)
         {
-            Debug.LogWarning("GroundItem has no ItemData assigned.");
+            Debug.LogWarning("No Inventory found on player.");
             return false;
         }
 
-        Inventory inventory = interactor.GetComponentInParent<Inventory>();
-        if (inventory != null)
+        ItemInstance item = new ItemInstance(itemData, quantity);
+
+        bool added = inventory.AddItem(item);
+
+        if (added)
         {
-            Debug.Log("Adding " + itemData.name + " to your inventory");
-            bool added = inventory.AddItem(new ItemInstance(itemData, quantity));
-            if (added)
-            {
-                _consumed = true;
-                Destroy(gameObject);
-                return true;
-            }
-            else
-            {
-                Debug.Log("Inventory full, cannot pick up item");
-            }
+            Destroy(gameObject);
+            return true;
         }
 
+        Debug.Log("Inventory full.");
         return false;
     }
 }

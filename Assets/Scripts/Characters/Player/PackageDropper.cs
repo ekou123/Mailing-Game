@@ -1,6 +1,7 @@
+using Photon.Pun;
 using UnityEngine;
 
-public class PackageDragger : MonoBehaviour
+public class PackageDragger : MonoBehaviourPun
 {
     public float holdDistance = 1.5f;
     public LayerMask packageLayer;
@@ -10,6 +11,12 @@ public class PackageDragger : MonoBehaviour
     private Camera cam;
 
     void Awake() => cam = GetComponentInChildren<Camera>();
+
+    void Start()
+    {
+        // Remote copies of other players must not read this machine's mouse
+        if (PhotonNetwork.IsConnected && !photonView.IsMine) enabled = false;
+    }
 
     void Update()
     {

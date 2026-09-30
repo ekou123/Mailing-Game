@@ -391,7 +391,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6284853224063691528
 RectTransform:
   m_ObjectHideFlags: 0
@@ -455,6 +455,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   dragIcon: {fileID: 0}
+  groundItemPrefab: {fileID: 0}
   itemDetailsUI: {fileID: 9062205788329164337}
 --- !u!1 &5216487124070648414
 GameObject:
@@ -637,6 +638,7 @@ MonoBehaviour:
   - {fileID: 6011870027372786114}
   - {fileID: 5669842084178993745}
   dragIcon: {fileID: 0}
+  groundItemPrefab: {fileID: 0}
   itemDetailsUI: {fileID: 0}
 --- !u!1 &6307780047833803603
 GameObject:

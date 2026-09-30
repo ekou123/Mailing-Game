@@ -8,12 +8,13 @@ public class InventoryItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     [HideInInspector] public ItemInstance itemInstance;
     [HideInInspector] public Transform parentAfterDrag;
 
-    void Awake()
+    private void Awake()
     {
         if (image == null)
             image = GetComponent<Image>();
     }
 
+    
     public void OnBeginDrag(PointerEventData eventData)
     {
         parentAfterDrag = transform.parent;
@@ -38,6 +39,22 @@ public class InventoryItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     {
         if (image != null) image.raycastTarget = true;
 
+        bool overSlot = false;
+        foreach (GameObject hovered in eventData.hovered)
+        {
+            if (hovered.GetComponent<InventorySlot>() != null)
+            {
+                overSlot = true;
+                break;
+            }
+        }
+
+        if (!overSlot)
+        {
+            DropToGround();
+            return;
+        }
+
         if (parentAfterDrag != null)
         {
             transform.SetParent(parentAfterDrag);
@@ -45,12 +62,36 @@ public class InventoryItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         }
     }
 
+    private void DropToGround()
+    {
+        Inventory inv = InventoryUI.Instance != null ? InventoryUI.Instance.Inventory : null;
+        if (inv != null)
+            inv.RemoveItem(itemInstance);
+
+        if (itemInstance != null && itemInstance.data != null && itemInstance.data.worldPrefab != null)
+        {
+            Character player = FindObjectOfType<Character>();
+            if (player != null)
+            {
+                Vector3 dropPos = player.transform.position + player.transform.forward * 2f;
+                Instantiate(itemInstance.data.worldPrefab, dropPos, Quaternion.identity);
+            }
+        }
+
+        Destroy(gameObject);
+    }
+
     public void FillParent()
     {
-        RectTransform rt = GetComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
+        RectTransform rect = GetComponent<RectTransform>();
+
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        rect.localScale = Vector3.one;
     }
+
+
+    
 }

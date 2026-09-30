@@ -133,9 +133,11 @@ Assets/
    ShiftScoreManager.cs
    SortingBin.cs
   UI/
+   InteractionPromptUI.cs
    InventorySlot.cs
    InventoryUI.cs
    ItemDetailsUI.cs
+   WorldInteractionPrompt.cs
  TextMesh Pro/Examples & Extras/Scripts/
   Benchmark01.cs
   Benchmark01_UGUI.cs

@@ -51,5 +51,6 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "Mailmen.sln"
+    "dotnet.defaultSolution": "Mailmen.sln",
+    "claudeCodeChat.permissions.yoloMode": false
 }

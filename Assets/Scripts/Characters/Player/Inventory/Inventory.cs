@@ -23,6 +23,8 @@ public class Inventory : MonoBehaviour
 
     public bool AddItem(ItemInstance item)
     {
+        if (item == null || item.data == null) return false;
+
         for (int i = 0; i < items.Length; i++)
         {
             if (items[i] == null)

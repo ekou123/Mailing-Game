@@ -8,14 +8,12 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private InventorySlot[] slots;
     [SerializeField] private Image dragIcon;
 
+
     [SerializeField] private ItemDetailsUI itemDetailsUI;
 
     private InventorySlot selectedSlot;
 
-
     private Inventory inventory;
-
-    public Image DragIcon => dragIcon;
     public Inventory Inventory => inventory;
     public int GetSlotIndex(InventorySlot slot) => System.Array.IndexOf(slots, slot);
 

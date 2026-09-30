@@ -19,26 +19,53 @@ public class InventorySlot : MonoBehaviour, IDropHandler, IPointerClickHandler, 
 
     public void SetItem(ItemInstance item)
     {
-        if (item == null) { ClearSlot(); return; }
+        if (item == null)
+        {
+            ClearSlot();
+            return;
+        }
+
+        if (item.data == null)
+        {
+            Debug.LogWarning("[InventorySlot] ItemInstance has no ItemData assigned.");
+            ClearSlot();
+            return;
+        }
+
         Item = item;
 
         InventoryItem invItem = ItemChild;
+
         if (invItem == null)
         {
-            var go = new GameObject("ItemIcon", typeof(RectTransform), typeof(Image), typeof(InventoryItem));
+            GameObject go = new GameObject("ItemIcon", typeof(RectTransform), typeof(Image), typeof(InventoryItem));
             go.transform.SetParent(transform, false);
+
             invItem = go.GetComponent<InventoryItem>();
-            invItem.image = go.GetComponent<Image>();
-            invItem.image.preserveAspect = true;
+        }
+
+        // Important: make sure the InventoryItem has an Image assigned
+        if (invItem.image == null)
+        {
+            invItem.image = invItem.GetComponent<Image>();
+
+            if (invItem.image == null)
+            {
+                invItem.image = invItem.gameObject.AddComponent<Image>();
+            }
         }
 
         invItem.gameObject.SetActive(true);
+
         invItem.image.sprite = item.data.icon;
+        invItem.image.preserveAspect = true;
         invItem.image.raycastTarget = true;
+
         invItem.itemInstance = item;
         invItem.FillParent();
 
-        if (quantityText != null) quantityText.text = item.data.itemName;
+        if (quantityText != null)
+            quantityText.text = item.data.itemName;
     }
 
     public void ClearSlot()
@@ -47,7 +74,8 @@ public class InventorySlot : MonoBehaviour, IDropHandler, IPointerClickHandler, 
         InventoryItem invItem = ItemChild;
         if (invItem != null)
             invItem.gameObject.SetActive(false);
-        if (quantityText != null) quantityText.text = "";
+        if (quantityText != null)
+            quantityText.text = "";
     }
 
     public void OnDrop(PointerEventData eventData)
@@ -110,29 +138,26 @@ public class InventorySlot : MonoBehaviour, IDropHandler, IPointerClickHandler, 
     {
         if (Item == null) return;
 
+        Inventory inv = InventoryUI.Instance != null ? InventoryUI.Instance.Inventory : null;
+        if (inv != null)
+            inv.RemoveItem(Item);
+
+        if (Item.data.worldPrefab == null)
+        {
+            Debug.LogWarning($"[InventorySlot] {Item.data.itemName} has no worldPrefab assigned — item removed from inventory but nothing spawned.");
+            return;
+        }
+
         Character player = FindObjectOfType<Character>();
         if (player == null) return;
 
-        GameObject groundItemPrefab = Resources.Load<GameObject>("GroundItem");
-        if (groundItemPrefab != null)
+        Vector3 dropPosition = player.transform.position + player.transform.forward * 2f;
+        GameObject groundItemObj = Instantiate(Item.data.worldPrefab, dropPosition, Quaternion.identity);
+        if (groundItemObj.TryGetComponent(out GroundItem groundItem))
         {
-            Vector3 dropPosition = player.transform.position + player.transform.forward * 2f;
-            GameObject groundItemObj = Instantiate(groundItemPrefab, dropPosition, Quaternion.identity);
-            GroundItem groundItem = groundItemObj.GetComponent<GroundItem>();
-            if (groundItem != null)
-            {
-                groundItem.itemData = Item.data;
-                groundItem.quantity = Item.quantity;
-            }
+            groundItem.itemData = Item.data;
+            groundItem.quantity = Item.quantity;
         }
-        else
-        {
-            Debug.LogWarning("GroundItem prefab not found in Resources/GroundItem.prefab");
-        }
-
-        Inventory inventory = player.GetComponent<Inventory>();
-        if (inventory != null)
-            inventory.RemoveItem(Item);
     }
 
     public void OnPointerEnter(PointerEventData eventData)
