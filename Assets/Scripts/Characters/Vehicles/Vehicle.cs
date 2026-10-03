@@ -1,7 +1,11 @@
+using Photon.Pun;
+using Photon.Realtime;
 using UnityEngine;
 
+// Online, the prefab needs a PhotonView (Ownership Transfer = Takeover) observing a PhotonTransformView.
+// The driver takes ownership, so their physics is what everyone else sees.
 [RequireComponent(typeof(Rigidbody))]
-public class Vehicle : MonoBehaviour
+public class Vehicle : MonoBehaviourPunCallbacks
 {
     [Header("Engine")]
     public float motorForce = 1500f;
@@ -64,6 +68,10 @@ public class Vehicle : MonoBehaviour
     private bool settling;
     private RigidbodyConstraints baseConstraints;
     private WheelFrictionCurve originalRearSidewaysFriction;
+    private int remoteDriverActor; // another player driving this, so we can free it if they leave
+
+    // Only the owner runs the physics; other players follow the synced transform
+    private bool IsSimulatedHere => !Net.Online || photonView == null || photonView.IsMine;
 
     private void Awake()
     {
@@ -92,8 +100,12 @@ public class Vehicle : MonoBehaviour
     /// </summary>
     void FixedUpdate()
     {
+        bool simulate = IsSimulatedHere;
+        if (rb.isKinematic == simulate) rb.isKinematic = !simulate;
+        if (!simulate) return;
+
         // Debug.Log($"[VehicleFixed START] vel={rb.velocity} mag={rb.velocity.magnitude:F3}");
-        
+
         StabilizeRotation();
         // Debug.Log($"[After Stabilize] vel={rb.velocity} mag={rb.velocity.magnitude:F3}");
         
@@ -223,6 +235,9 @@ public class Vehicle : MonoBehaviour
 
     public void ApplyInput(float accel, float steer, bool handbrake)
     {
+        // Still waiting for the server to hand us ownership
+        if (!IsSimulatedHere) return;
+
         currentSpeed = Vector3.Dot(rb.velocity, transform.forward);
         currentSpeed = Mathf.Abs(currentSpeed);
 
@@ -380,6 +395,12 @@ public class Vehicle : MonoBehaviour
         baseConstraints  = rb.constraints;
         rb.constraints   = baseConstraints | RigidbodyConstraints.FreezePositionY;
         settling         = true;
+
+        if (Net.Online && photonView != null)
+        {
+            if (!photonView.AmOwner) photonView.RequestOwnership();
+            photonView.RPC(nameof(RPC_SetOccupied), RpcTarget.Others, true);
+        }
     }
 
     public void OnDriverExit()
@@ -392,6 +413,24 @@ public class Vehicle : MonoBehaviour
             wc.motorTorque = 0f;
             wc.brakeTorque = brakeForce;
         }
+
+        if (Net.Online && photonView != null)
+            photonView.RPC(nameof(RPC_SetOccupied), RpcTarget.Others, false);
+    }
+
+    [PunRPC]
+    void RPC_SetOccupied(bool occupied, PhotonMessageInfo info)
+    {
+        isOccupied        = occupied;
+        remoteDriverActor = occupied ? info.Sender.ActorNumber : 0;
+    }
+
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        // Driver disconnected mid-drive; free the seat
+        if (otherPlayer.ActorNumber != remoteDriverActor) return;
+        isOccupied        = false;
+        remoteDriverActor = 0;
     }
 
     private void OnDrawGizmosSelected()

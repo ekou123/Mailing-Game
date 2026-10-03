@@ -1,3 +1,4 @@
+using Photon.Pun;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -24,6 +25,13 @@ public class Interactor : MonoBehaviour
         if (playerCharacter == null)
         {
             Debug.LogError("Character component not found on Interactor or any parent");
+            return;
+        }
+
+        // Remote players' copies must not react to this machine's key presses or show prompts
+        if (PhotonNetwork.IsConnected && !playerCharacter.photonView.IsMine)
+        {
+            enabled = false;
             return;
         }
 

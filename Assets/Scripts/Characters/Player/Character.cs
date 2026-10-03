@@ -121,6 +121,10 @@ public class Character : MonoBehaviourPunCallbacks
         playerInput = GetComponent<PlayerInput>();
         rb = GetComponent<Rigidbody>();
         groundSensor = GetComponent<GroundSensor>();
+
+        // Other players' copies are moved by their synced transform, not local physics
+        if (!IsLocalPlayer)
+            rb.isKinematic = true;
         cinemachineBrain = GetComponentInChildren<CinemachineBrain>();
 
         if (cinemachineBrain != null)

@@ -1,3 +1,4 @@
+using Photon.Pun;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,9 +8,12 @@ public class VehicleEntryTrigger : MonoBehaviour
 
     private Character characterInRange;
 
+    // Only this machine's player can get in from here; other players' copies aren't ours to drive
+    private static bool IsLocal(Character character) => !PhotonNetwork.IsConnected || character.photonView.IsMine;
+
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.TryGetComponent<Character>(out var character)) return;
+        if (!other.TryGetComponent<Character>(out var character) || !IsLocal(character)) return;
         characterInRange = character;
         character.movementSM.currentState.interactAction.Enable();
         character.movementSM.currentState.interactAction.performed += OnInteractPressed;
@@ -17,7 +21,7 @@ public class VehicleEntryTrigger : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (!other.TryGetComponent<Character>(out var character)) return;
+        if (!other.TryGetComponent<Character>(out var character) || !IsLocal(character)) return;
 
         // Guard — state may have already changed during Enter()
         if (characterInRange == null) return;

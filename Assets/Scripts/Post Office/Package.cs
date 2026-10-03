@@ -2,7 +2,7 @@ using Photon.Pun;
 using UnityEngine;
 using TMPro;
 
-public class Package : MonoBehaviourPun, IDraggable, IPunInstantiateMagicCallback
+public class Package : NetworkDraggable, IPunInstantiateMagicCallback
 {
     [Header("Label Info")]
     public string recipientName;
@@ -14,17 +14,6 @@ public class Package : MonoBehaviourPun, IDraggable, IPunInstantiateMagicCallbac
     private string rawLabel;
     private float refreshTimer;
     public float refreshInterval = 0.8f;
-
-    private Rigidbody rb;
-    private bool prefabKinematic;
-
-    public Transform Transform => transform;
-
-    void Awake()
-    {
-        rb = GetComponent<Rigidbody>();
-        if (rb != null) prefabKinematic = rb.isKinematic;
-    }
 
     // Runs on every client when PackageSpawner creates this package, before Start
     public void OnPhotonInstantiate(PhotonMessageInfo info)
@@ -43,11 +32,9 @@ public class Package : MonoBehaviourPun, IDraggable, IPunInstantiateMagicCallbac
         RefreshLabel();
     }
 
-    void Update()
+    protected override void Update()
     {
-        // Only the owner simulates physics; everyone else follows the synced transform
-        if (rb != null && PhotonNetwork.IsConnected)
-            rb.isKinematic = prefabKinematic || !photonView.IsMine;
+        base.Update();
 
         refreshTimer += Time.deltaTime;
         if (refreshTimer >= refreshInterval)
@@ -66,13 +53,4 @@ public class Package : MonoBehaviourPun, IDraggable, IPunInstantiateMagicCallbac
             ? condition.ProcessLabel(rawLabel)
             : rawLabel;
     }
-
-    public void OnPickUp()
-    {
-        // Take ownership so our drag movement is what gets synced to other players
-        if (PhotonNetwork.IsConnected && !photonView.IsMine)
-            photonView.RequestOwnership();
-    }
-
-    public void OnDrop() { }
 }

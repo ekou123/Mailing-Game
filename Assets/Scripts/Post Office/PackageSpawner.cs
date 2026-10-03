@@ -38,7 +38,7 @@ public class PackageSpawner : MonoBehaviourPunCallbacks
         var wait = new WaitForSeconds(spawnInterval);
         while (true)
         {
-            if (FindObjectsOfType<Package>().Length < maxPackages)
+            if (ShiftManager.IsShiftActive && FindObjectsOfType<Package>().Length < maxPackages)
                 SpawnPackage();
             yield return wait;
         }
@@ -46,13 +46,10 @@ public class PackageSpawner : MonoBehaviourPunCallbacks
 
     void SpawnPackage()
     {
-        if (spawnPoints == null || spawnPoints.Length == 0)
-        {
-            Debug.LogWarning("PackageSpawner has no spawn points assigned.");
-            return;
-        }
-
-        Transform point = spawnPoints[Random.Range(0, spawnPoints.Length)];
+        // No spawn points set up yet: spawn at the spawner itself
+        Transform point = spawnPoints == null || spawnPoints.Length == 0
+            ? transform
+            : spawnPoints[Random.Range(0, spawnPoints.Length)];
         object[] data =
         {
             recipientNames[Random.Range(0, recipientNames.Length)],
